@@ -45,7 +45,7 @@ void compute_next(uv_idle_t* handle) {
                 break;                                 // prime found, break
             }
         }
-    } while (prime_not_found);                            // waiting on mathematicians to prove the infiniteness of primes ;)
+    } while (prime_not_found);                            
 }
 
 
