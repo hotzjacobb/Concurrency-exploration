@@ -1,14 +1,17 @@
 /*
  * ws protocol handler plugin for "lws-minimal"
+ /*
+ * Server to forward mpi data
  *
- * Copyright (C) 2010-2018 Andy Green <andy@warmcat.com>
  *
- * This file is made available under the Creative Commons CC0 1.0
- * Universal Public Domain Dedication.
+ * Made referencing the libwebsocket minimal web server
  *
- * This version holds a single message at a time, which may be lost if a new
- * message comes.  See the minimal-ws-server-ring sample for the same thing
- * but using an lws_ring ringbuffer to hold up to 8 messages at a time.
+ * http server with lws,
+ * with an added websocket chat server.
+ * 
+ *
+ *
+ * This version holds a single message at a time
  */
 
 #if !defined (LWS_PLUGIN_STATIC)
@@ -125,9 +128,7 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 		if (pss->last == vhd->current)
 			break;
 
-			//printf("message value: %s",(unsigned char *)(vhd->amsg.payload));
-	       // printf("\r\n");
-
+		
 		/* notice we allowed for LWS_PRE in the payload already */
 		m = lws_write(wsi, ((unsigned char *)vhd->amsg.payload) +
 			      LWS_PRE, vhd->amsg.len, LWS_WRITE_TEXT);
