@@ -1,6 +1,5 @@
 /*
  * ws protocol handler plugin for "lws-minimal"
- /*
  * Server to forward mpi data
  *
  *
@@ -22,13 +21,6 @@
 
 #include <string.h>
 
-// #include <netdb.h> 
-// #include <stdio.h> 
-// #include <stdlib.h> 
-// #include <sys/socket.h> 
-// #define MAX 80 
-// #define PORT 5555
-// #define SA struct sockaddr 
 
 #include <arpa/inet.h>
 #include <stdio.h>
@@ -44,6 +36,14 @@
 #ifndef PORT
 #define PORT 5555
 #endif
+
+/* data for connecting to MPI adapter */
+
+static struct lws_context *context_mpi;
+static struct lws *client_wsi;
+static int interrupted, zero_length_ping, port = 5555,  // port that adapter listens on
+	   ssl_connection = !LCCSCF_USE_SSL;
+static const char *server_address = "localhost", *pro = "lws-minimal";
 
 
 /* one of these created for each message */
@@ -141,6 +141,9 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 		break;
 
 	case LWS_CALLBACK_RECEIVE:
+
+		printf("hey\r\n");
+
 		if (vhd->amsg.payload)
 			__minimal_destroy_message(&vhd->amsg);
 
@@ -159,6 +162,8 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 
 
 		
+		// Just TCP no websocket commented out below
+
 		int ret = 0;
 		int conn_fd;
 		struct sockaddr_in server_addr = { 0 };
@@ -197,10 +202,6 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 			return -1;
 		}
 
-		//printf("message value: %s",(unsigned char *)vhd->amsg.payload);
-		//printf("\r\n");
-
-		//char buff[] = strcat((char*) in, "\r\n");
 
 		char* buff;
 		if((buff = malloc(strlen(in)+strlen("\r\n")+1)) != NULL){
@@ -209,26 +210,23 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 			strcat(buff,"\r\n");
 		} else {
 			return -1;
-			// exit?
 		}
-
-		//char buff[] = ((unsigned char *)vhd->amsg.payload);
 
 		write(conn_fd, buff, sizeof(buff));
 
 		
-		// ret = shutdown(conn_fd, SHUT_RDWR);
-		// if (ret == -1) {
-		// 	perror("shutdown");
-		// 	return -1;
-		// }
+		ret = shutdown(conn_fd, SHUT_RDWR);
+		if (ret == -1) {
+			perror("shutdown");
+			return -1;
+		}
 
 		
-		// ret = close(conn_fd);
-		// if (ret == -1) {
-		// 	perror("close");
-		// 	return -1;
-		// }
+		ret = close(conn_fd);
+		if (ret == -1) {
+			perror("close");
+			return -1;
+		}
 
 
 
