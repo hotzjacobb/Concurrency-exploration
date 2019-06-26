@@ -45,6 +45,10 @@ static int interrupted, zero_length_ping, port = 5555,  // port that adapter lis
 	   ssl_connection = !LCCSCF_USE_SSL;
 static const char *server_address = "localhost", *pro = "lws-minimal";
 
+/* fd for socket that sends messages to MPI */
+
+int conn_fd;
+int conn_fd_init = 0;
 
 /* one of these created for each message */
 
@@ -106,6 +110,48 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 		vhd->context = lws_get_context(wsi);
 		vhd->protocol = lws_get_protocol(wsi);
 		vhd->vhost = lws_get_vhost(wsi);
+
+		// Just TCP no websocket
+
+		int ret = 0;
+		struct sockaddr_in server_addr = { 0 };
+
+		server_addr.sin_family = AF_INET;
+
+		
+		server_addr.sin_port = htons(PORT);
+
+		
+		ret = inet_pton(AF_INET, ADDRESS, &server_addr.sin_addr);
+		if (ret != 1) {
+			if (ret == -1) {
+				perror("inet_pton");
+			}
+			fprintf(stderr,
+					"failed to convert address %s "
+					"to binary net address\n",
+					ADDRESS);
+			return -1;
+		}
+
+		fprintf(stdout, "CONNECTING: address=%s port=%d\n", ADDRESS, PORT);
+
+		
+		conn_fd = socket(AF_INET, SOCK_STREAM, 0);
+		if (conn_fd == -1) {
+			perror("socket");
+			return -1;
+		}
+
+		
+		ret = connect(conn_fd, (struct sockaddr*)&server_addr, sizeof(server_addr));
+		if (ret == -1) {
+			perror("connect");
+			return -1;
+		}
+
+		conn_fd_init = 1;
+
 		break;
 
 	case LWS_CALLBACK_ESTABLISHED:
@@ -161,47 +207,6 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 		vhd->current++;
 
 
-		
-		// Just TCP no websocket commented out below
-
-		int ret = 0;
-		int conn_fd;
-		struct sockaddr_in server_addr = { 0 };
-
-		server_addr.sin_family = AF_INET;
-
-		
-		server_addr.sin_port = htons(PORT);
-
-		
-		ret = inet_pton(AF_INET, ADDRESS, &server_addr.sin_addr);
-		if (ret != 1) {
-			if (ret == -1) {
-				perror("inet_pton");
-			}
-			fprintf(stderr,
-					"failed to convert address %s "
-					"to binary net address\n",
-					ADDRESS);
-			return -1;
-		}
-
-		fprintf(stdout, "CONNECTING: address=%s port=%d\n", ADDRESS, PORT);
-
-		
-		conn_fd = socket(AF_INET, SOCK_STREAM, 0);
-		if (conn_fd == -1) {
-			perror("socket");
-			return -1;
-		}
-
-		
-		ret = connect(conn_fd, (struct sockaddr*)&server_addr, sizeof(server_addr));
-		if (ret == -1) {
-			perror("connect");
-			return -1;
-		}
-
 
 		char* buff;
 		if((buff = malloc(strlen(in)+strlen("\r\n")+1)) != NULL){
@@ -212,21 +217,25 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 			return -1;
 		}
 
+		printf("message: %s", buff);
+
+		if (conn_fd_init) {
 		write(conn_fd, buff, sizeof(buff));
-
-		
-		ret = shutdown(conn_fd, SHUT_RDWR);
-		if (ret == -1) {
-			perror("shutdown");
-			return -1;
 		}
 
 		
-		ret = close(conn_fd);
-		if (ret == -1) {
-			perror("close");
-			return -1;
-		}
+		// ret = shutdown(conn_fd, SHUT_RDWR);
+		// if (ret == -1) {
+		// 	perror("shutdown");
+		// 	return -1;
+		// }
+
+		
+		// ret = close(conn_fd);
+		// if (ret == -1) {
+		// 	perror("close");
+		// 	return -1;
+		// }
 
 
 
