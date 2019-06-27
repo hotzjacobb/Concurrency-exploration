@@ -188,7 +188,6 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 
 	case LWS_CALLBACK_RECEIVE:
 
-		printf("hey\r\n");
 
 		if (vhd->amsg.payload)
 			__minimal_destroy_message(&vhd->amsg);
@@ -206,10 +205,10 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 		memcpy((char *)vhd->amsg.payload + LWS_PRE, in, len);
 		vhd->current++;
 
-
+		printf("in: %s\r\nstart\r\n", in);
 
 		char* buff;
-		if((buff = malloc(strlen(in)+strlen("\n")+1)) != NULL){
+		if((buff = malloc(strlen(in)+strlen("\r\n"))) != NULL){
 		
     	buff[0] = '\0';   // ensures the memory is an empty string
 			strcat(buff,in);
@@ -218,17 +217,13 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 			return -1;
 		}
 
-		printf("buff size: %lu\r\n", strlen(in)+strlen("\n")+1);
-		printf("buff size: %lu\r\n", strlen(in));
-		printf("buff size: %lu\r\n", strlen("\n"));
-		printf("buff size: %lu\r\n", strlen("\n")-strlen("\n")+1);
 
 		if (conn_fd_init) {
-		write(conn_fd, buff, strlen(in)+strlen("\n")+1);
+		write(conn_fd, buff, strlen(in)+strlen("\r\n"));
 		}
 
 		free(buff);
-
+		memset(in, 0, strlen(in) + 1);       // reset so clean for next
 		
 		// ret = shutdown(conn_fd, SHUT_RDWR);
 		// if (ret == -1) {
