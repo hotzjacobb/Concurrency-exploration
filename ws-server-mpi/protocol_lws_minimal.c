@@ -209,7 +209,8 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 
 
 		char* buff;
-		if((buff = malloc(strlen(in)+strlen("\r\n")+1)) != NULL){
+		if((buff = malloc(strlen(in)+strlen("\n")+1)) != NULL){
+		
     	buff[0] = '\0';   // ensures the memory is an empty string
 			strcat(buff,in);
 			strcat(buff,"\r\n");
@@ -217,11 +218,16 @@ callback_minimal(struct lws *wsi, enum lws_callback_reasons reason,
 			return -1;
 		}
 
-		printf("message: %s", buff);
+		printf("buff size: %lu\r\n", strlen(in)+strlen("\n")+1);
+		printf("buff size: %lu\r\n", strlen(in));
+		printf("buff size: %lu\r\n", strlen("\n"));
+		printf("buff size: %lu\r\n", strlen("\n")-strlen("\n")+1);
 
 		if (conn_fd_init) {
-		write(conn_fd, buff, sizeof(buff));
+		write(conn_fd, buff, strlen(in)+strlen("\n")+1);
 		}
+
+		free(buff);
 
 		
 		// ret = shutdown(conn_fd, SHUT_RDWR);
